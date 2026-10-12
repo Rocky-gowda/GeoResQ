@@ -1,0 +1,366 @@
+{
+  "journeys": [
+    {
+      "journey_id": "J-SEED-001",
+      "vehicle_id": "veh_a",
+      "origin": {
+        "lat": 12.955,
+        "lng": 77.61
+      },
+      "destination": {
+        "lat": 12.985,
+        "lng": 77.58
+      },
+      "route_id": "M-01",
+      "route_coordinates": [
+        {
+          "lat": 12.955,
+          "lng": 77.61
+        },
+        {
+          "lat": 12.958,
+          "lng": 77.608
+        },
+        {
+          "lat": 12.961,
+          "lng": 77.605
+        },
+        {
+          "lat": 12.964,
+          "lng": 77.602
+        },
+        {
+          "lat": 12.967,
+          "lng": 77.599
+        },
+        {
+          "lat": 12.97,
+          "lng": 77.596
+        },
+        {
+          "lat": 12.972,
+          "lng": 77.593
+        },
+        {
+          "lat": 12.975,
+          "lng": 77.59
+        },
+        {
+          "lat": 12.978,
+          "lng": 77.587
+        },
+        {
+          "lat": 12.981,
+          "lng": 77.584
+        },
+        {
+          "lat": 12.985,
+          "lng": 77.58
+        }
+      ],
+      "route_distance_km": 4.67,
+      "actual_travel_time_minutes": 16.8,
+      "planned_travel_time_minutes": 16.0,
+      "completed_at": "2025-06-01T09:14:00Z",
+      "deviation_occurred": false,
+      "incident_exposure": 0,
+      "outcome": "completed",
+      "source": "seeded"
+    },
+    {
+      "journey_id": "J-SEED-002",
+      "vehicle_id": "veh_a",
+      "origin": {
+        "lat": 12.955,
+        "lng": 77.61
+      },
+      "destination": {
+        "lat": 12.985,
+        "lng": 77.58
+      },
+      "route_id": "M-01",
+      "route_coordinates": [
+        {
+          "lat": 12.955,
+          "lng": 77.61
+        },
+        {
+          "lat": 12.958,
+          "lng": 77.608
+        },
+        {
+          "lat": 12.961,
+          "lng": 77.605
+        },
+        {
+          "lat": 12.964,
+          "lng": 77.602
+        },
+        {
+          "lat": 12.967,
+          "lng": 77.599
+        },
+        {
+          "lat": 12.97,
+          "lng": 77.596
+        },
+        {
+          "lat": 12.972,
+          "lng": 77.593
+        },
+        {
+          "lat": 12.975,
+          "lng": 77.59
+        },
+        {
+          "lat": 12.978,
+          "lng": 77.587
+        },
+        {
+          "lat": 12.981,
+          "lng": 77.584
+        },
+        {
+          "lat": 12.985,
+          "lng": 77.58
+        }
+      ],
+      "route_distance_km": 4.67,
+      "actual_travel_time_minutes": 24.3,
+      "planned_travel_time_minutes": 16.0,
+      "completed_at": "2025-06-03T17:42:00Z",
+      "deviation_occurred": true,
+      "incident_exposure": 1,
+      "outcome": "rerouted",
+      "source": "seeded"
+    },
+    {
+      "journey_id": "J-SEED-003",
+      "vehicle_id": "veh_a",
+      "origin": {
+        "lat": 12.955,
+        "lng": 77.61
+      },
+      "destination": {
+        "lat": 12.985,
+        "lng": 77.58
+      },
+      "route_id": "M-02",
+      "route_coordinates": [
+        {
+          "lat": 12.955,
+          "lng": 77.61
+        },
+        {
+          "lat": 12.958,
+          "lng": 77.6085
+        },
+        {
+          "lat": 12.97,
+          "lng": 77.596
+        },
+        {
+          "lat": 12.972,
+          "lng": 77.598
+        },
+        {
+          "lat": 12.9745,
+          "lng": 77.5955
+        },
+        {
+          "lat": 12.9768,
+          "lng": 77.5925
+        },
+        {
+          "lat": 12.98,
+          "lng": 77.586
+        },
+        {
+          "lat": 12.9835,
+          "lng": 77.5825
+        },
+        {
+          "lat": 12.985,
+          "lng": 77.58
+        }
+      ],
+      "route_distance_km": 5.04,
+      "actual_travel_time_minutes": 19.1,
+      "planned_travel_time_minutes": 18.5,
+      "completed_at": "2025-06-05T11:08:00Z",
+      "deviation_occurred": false,
+      "incident_exposure": 0,
+      "outcome": "completed",
+      "source": "seeded"
+    },
+    {
+      "journey_id": "J-SEED-004",
+      "vehicle_id": "veh_a",
+      "origin": {
+        "lat": 12.955,
+        "lng": 77.61
+      },
+      "destination": {
+        "lat": 12.985,
+        "lng": 77.58
+      },
+      "route_id": "M-02",
+      "route_coordinates": [
+        {
+          "lat": 12.955,
+          "lng": 77.61
+        },
+        {
+          "lat": 12.958,
+          "lng": 77.6085
+        },
+        {
+          "lat": 12.97,
+          "lng": 77.596
+        },
+        {
+          "lat": 12.972,
+          "lng": 77.598
+        },
+        {
+          "lat": 12.9745,
+          "lng": 77.5955
+        },
+        {
+          "lat": 12.9768,
+          "lng": 77.5925
+        },
+        {
+          "lat": 12.98,
+          "lng": 77.586
+        },
+        {
+          "lat": 12.9835,
+          "lng": 77.5825
+        },
+        {
+          "lat": 12.985,
+          "lng": 77.58
+        }
+      ],
+      "route_distance_km": 5.04,
+      "actual_travel_time_minutes": 18.5,
+      "planned_travel_time_minutes": 18.5,
+      "completed_at": "2025-06-07T08:33:00Z",
+      "deviation_occurred": false,
+      "incident_exposure": 0,
+      "outcome": "completed",
+      "source": "seeded"
+    },
+    {
+      "journey_id": "J-SEED-005",
+      "vehicle_id": "veh_a",
+      "origin": {
+        "lat": 12.955,
+        "lng": 77.61
+      },
+      "destination": {
+        "lat": 12.985,
+        "lng": 77.58
+      },
+      "route_id": "M-03",
+      "route_coordinates": [
+        {
+          "lat": 12.955,
+          "lng": 77.61
+        },
+        {
+          "lat": 12.958,
+          "lng": 77.609
+        },
+        {
+          "lat": 12.97,
+          "lng": 77.596
+        },
+        {
+          "lat": 12.968,
+          "lng": 77.594
+        },
+        {
+          "lat": 12.97,
+          "lng": 77.591
+        },
+        {
+          "lat": 12.973,
+          "lng": 77.588
+        },
+        {
+          "lat": 12.977,
+          "lng": 77.5845
+        },
+        {
+          "lat": 12.981,
+          "lng": 77.5818
+        },
+        {
+          "lat": 12.985,
+          "lng": 77.58
+        }
+      ],
+      "route_distance_km": 5.06,
+      "actual_travel_time_minutes": 21.4,
+      "planned_travel_time_minutes": 20.0,
+      "completed_at": "2025-06-09T14:55:00Z",
+      "deviation_occurred": false,
+      "incident_exposure": 0,
+      "outcome": "completed",
+      "source": "seeded"
+    },
+    {
+      "journey_id": "J-VEH_A-7D0AFDBE",
+      "vehicle_id": "veh_a",
+      "origin": {
+        "lat": 12.955,
+        "lng": 77.61
+      },
+      "destination": {
+        "lat": 12.985,
+        "lng": 77.58
+      },
+      "route_id": "route_b",
+      "route_coordinates": [
+        {
+          "lat": 12.97,
+          "lng": 77.596
+        },
+        {
+          "lat": 12.972,
+          "lng": 77.598
+        },
+        {
+          "lat": 12.9745,
+          "lng": 77.5955
+        },
+        {
+          "lat": 12.9768,
+          "lng": 77.5925
+        },
+        {
+          "lat": 12.98,
+          "lng": 77.586
+        },
+        {
+          "lat": 12.9835,
+          "lng": 77.5825
+        },
+        {
+          "lat": 12.985,
+          "lng": 77.58
+        }
+      ],
+      "route_distance_km": 2.762877417169698,
+      "actual_travel_time_minutes": 21.1,
+      "planned_travel_time_minutes": 6.2,
+      "completed_at": "2026-10-10T17:53:27.764131Z",
+      "deviation_occurred": true,
+      "incident_exposure": 0,
+      "outcome": "in_progress",
+      "source": "recorded"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { SimulationState } from './types';
+import { SimulationState, RMIResult, JourneyRecord } from './types';
 
 // All /api/* calls go through Vite proxy → http://127.0.0.1:8001
 const BASE = '/api';
@@ -45,4 +45,61 @@ export async function checkHealth(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+// ── Route Memory Intelligence API ─────────────────────────────────────────────
+
+export async function fetchRouteMemoryHistory(): Promise<{ total: number; journeys: JourneyRecord[] }> {
+  const res = await fetchWithTimeout(`${BASE}/route-memory/history`);
+  if (!res.ok) throw new Error(`RMI history error: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchRouteMemoryMatches(vehicleId: string): Promise<{
+  matched_count: number;
+  journeys: JourneyRecord[];
+  route_stats: Record<string, unknown>;
+}> {
+  const res = await fetchWithTimeout(`${BASE}/route-memory/matches/${vehicleId}`);
+  if (!res.ok) throw new Error(`RMI matches error: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchRouteMemoryCompare(vehicleId: string): Promise<RMIResult> {
+  const res = await fetchWithTimeout(`${BASE}/route-memory/compare/${vehicleId}`);
+  if (!res.ok) throw new Error(`RMI compare error: ${res.status}`);
+  return res.json();
+}
+
+export interface RecordJourneyBody {
+  vehicle_id: string;
+  origin: { lat: number; lng: number };
+  destination: { lat: number; lng: number };
+  route_id: string;
+  route_coordinates: Array<{ lat: number; lng: number }>;
+  route_distance_km: number;
+  actual_travel_time_minutes: number;
+  planned_travel_time_minutes: number;
+  deviation_occurred?: boolean;
+  incident_exposure?: number;
+  outcome?: string;
+}
+
+export async function recordJourney(
+  vehicleId: string,
+  body: RecordJourneyBody,
+): Promise<{ journey_id: string; message: string; total_journeys: number }> {
+  const res = await fetchWithTimeout(`${BASE}/route-memory/record/${vehicleId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`RMI record error: ${res.status}`);
+  return res.json();
+}
+
+export async function resetRouteMemory(): Promise<{ status: string; message: string; total_journeys: number }> {
+  const res = await fetchWithTimeout(`${BASE}/route-memory/reset`, { method: 'POST' });
+  if (!res.ok) throw new Error(`RMI reset error: ${res.status}`);
+  return res.json();
 }

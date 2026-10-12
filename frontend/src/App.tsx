@@ -8,10 +8,11 @@ import DecisionTimeline from './components/DecisionTimeline';
 import AgentLog from './components/AgentLog';
 import WhatIfPanel from './components/WhatIfPanel';
 import DispatchPanel from './components/DispatchPanel';
+import RouteMemoryPanel from './components/RouteMemoryPanel';
 
 const POLL_INTERVAL_MS = 1500;
 // Reroute every N ticks to avoid hammering OSRM
-const REROUTE_EVERY_N_TICKS = 4;
+const REROUTE_EVERY_N_TICKS = 8;
 
 // ── Routing status indicator ─────────────────────────────────────────────────
 type RoutingStatus = 'idle' | 'fetching' | 'osrm' | 'fallback' | 'error';
@@ -146,13 +147,19 @@ type BackendStatus = 'connecting' | 'online' | 'offline';
 export default function App() {
   const [state, setState] = useState<SimulationState | null>(null);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('veh_a');
-  const [activeTab, setActiveTab] = useState<'intelligence' | 'agents' | 'whatif'>('intelligence');
+  const [activeTab, setActiveTab] = useState<'intelligence' | 'agents' | 'whatif' | 'rmi'>('intelligence');
   const [backendStatus, setBackendStatus] = useState<BackendStatus>('connecting');
   const [routingStatus, setRoutingStatus] = useState<RoutingStatus>('idle');
+  // RMI: historical route display on map
+  const [rmiHistoricalWaypoints, setRmiHistoricalWaypoints] = useState<Coordinate[] | null>(null);
+  const [rmiHistoricalRouteId, setRmiHistoricalRouteId] = useState<string | null>(null);
 
   const pollRef     = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastTickRef = useRef<number>(-1);
   const isEnriching = useRef(false);
+  // Keep a ref to the latest state so loadState doesn't need state as a dependency
+  // (avoids the interval being torn down and re-created on every state update)
+  const stateRef    = useRef<SimulationState | null>(null);
 
   // ── One-shot health probe on mount ────────────────────────────────────────
   useEffect(() => {
@@ -166,10 +173,13 @@ export default function App() {
   }, []);
 
   // ── Fetch state + OSRM enrich ──────────────────────────────────────────────
+  // loadState is stable (no state dependency) — the interval never resets on re-render.
   const loadState = useCallback(async () => {
     try {
       const raw = await fetchState();
       setBackendStatus('online');
+
+      const prevState = stateRef.current;
 
       // Enrich with OSRM only every N ticks (and not while already fetching)
       const shouldEnrich =
@@ -178,24 +188,25 @@ export default function App() {
           raw.tick - lastTickRef.current >= REROUTE_EVERY_N_TICKS ||
           // Always enrich when deviation first appears
           (raw.vehicles.find(v => v.id === 'veh_a')?.deviation_detected &&
-           !state?.vehicles.find(v => v.id === 'veh_a')?.deviation_detected));
+           !prevState?.vehicles.find(v => v.id === 'veh_a')?.deviation_detected));
 
       if (shouldEnrich && (raw.alternative_routes['veh_a']?.length ?? 0) > 0) {
         isEnriching.current = true;
         lastTickRef.current = raw.tick;
         try {
           const enriched = await enrichStateWithOsrm(raw, setRoutingStatus);
+          stateRef.current = enriched;
           setState(enriched);
         } finally {
           isEnriching.current = false;
         }
       } else {
         // Merge OSRM fields from previous state to avoid flicker
-        if (state) {
+        if (prevState) {
           const merged: SimulationState = {
             ...raw,
             vehicles: raw.vehicles.map(v => {
-              const prev = state.vehicles.find(p => p.id === v.id);
+              const prev = prevState.vehicles.find(p => p.id === v.id);
               return {
                 ...v,
                 osrm_planned_route: prev?.osrm_planned_route ?? v.osrm_planned_route,
@@ -205,28 +216,30 @@ export default function App() {
             alternative_routes: {
               ...raw.alternative_routes,
               veh_a: (raw.alternative_routes['veh_a'] ?? []).map((alt, i) => {
-                const prevAlt = state.alternative_routes['veh_a']?.[i];
+                const prevAlt = prevState.alternative_routes['veh_a']?.[i];
                 return prevAlt
                   ? { ...alt, osrm_waypoints: prevAlt.osrm_waypoints, routing_source: prevAlt.routing_source }
                   : alt;
               }),
             },
           };
+          stateRef.current = merged;
           setState(merged);
         } else {
+          stateRef.current = raw;
           setState(raw);
         }
       }
     } catch {
       setBackendStatus('offline');
     }
-  }, [state]);
+  }, []); // stable — no state dependency
 
   useEffect(() => {
     loadState();
     pollRef.current = setInterval(loadState, POLL_INTERVAL_MS);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [loadState]);
+  }, []); // runs once on mount — interval never resets
 
   const handleStart = async () => { await startSimulation(); await loadState(); };
   const handlePause = async () => { await pauseSimulation(); await loadState(); };
@@ -329,7 +342,12 @@ export default function App() {
 
         {/* Map — large center area, always rendered */}
         <div className="flex-1 relative min-w-0" style={{ minHeight: 0 }}>
-          <MapView state={state} selectedVehicleId={selectedVehicleId} />
+          <MapView
+            state={state}
+            selectedVehicleId={selectedVehicleId}
+            historicalRouteWaypoints={rmiHistoricalWaypoints}
+            historicalRouteId={rmiHistoricalRouteId}
+          />
 
           {/* Legend overlay */}
           <div className="absolute bottom-4 left-4 bg-[#0f1623]/90 border border-[#2a3750] rounded-lg p-3 text-xs space-y-1.5 backdrop-blur-sm z-[900] pointer-events-none">
@@ -339,6 +357,9 @@ export default function App() {
             <LegendRow color="#ef4444" label="Deviation Path" />
             <LegendRow color="#22c55e" thick label="Recommended Route" />
             <LegendRow color="#818cf8" dash label="Alternative Routes" />
+            {rmiHistoricalWaypoints && (
+              <LegendRow color="#f59e0b" dash label="Historical Route (RMI)" />
+            )}
           </div>
 
           {/* Deviation alert */}
@@ -358,18 +379,21 @@ export default function App() {
         {/* Right Panel */}
         <div className="w-80 flex-shrink-0 bg-[#0a0f1a] border-l border-[#1e2d45] flex flex-col overflow-hidden">
           {/* Tab selector */}
-          <div className="flex border-b border-[#1e2d45] flex-shrink-0">
-            {(['intelligence', 'agents', 'whatif'] as const).map(tab => (
+          <div className="flex border-b border-[#1e2d45] flex-shrink-0 flex-wrap">
+            {(['intelligence', 'agents', 'whatif', 'rmi'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors min-w-0 ${
                   activeTab === tab
                     ? 'bg-[#161e2e] text-white border-b-2 border-blue-500'
                     : 'text-[#64748b] hover:text-white hover:bg-[#161e2e]'
-                }`}
+                } ${tab === 'rmi' ? (activeTab === 'rmi' ? 'border-purple-500' : '') : ''}`}
               >
-                {tab === 'intelligence' ? '🎯 Intel' : tab === 'agents' ? '🤖 Agents' : '⚖️ What-If'}
+                {tab === 'intelligence' ? '🎯 Intel'
+                  : tab === 'agents' ? '🤖 Agents'
+                  : tab === 'whatif' ? '⚖️ What-If'
+                  : '🧠 RMI'}
               </button>
             ))}
           </div>
@@ -388,6 +412,18 @@ export default function App() {
               <WhatIfPanel
                 options={state?.what_if_comparison ?? {}}
                 baseEta={primaryVehicle?.planned_eta_minutes ?? 12}
+              />
+            )}
+            {activeTab === 'rmi' && (
+              <RouteMemoryPanel
+                rmiResult={state?.rmi_result ?? null}
+                vehicle={primaryVehicle}
+                altRoutes={altRoutes}
+                onUseRoute={(routeId, waypoints) => {
+                  // Show historical route on map
+                  setRmiHistoricalWaypoints(waypoints);
+                  setRmiHistoricalRouteId(routeId);
+                }}
               />
             )}
           </div>

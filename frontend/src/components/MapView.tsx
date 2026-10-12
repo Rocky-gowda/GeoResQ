@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Polyline, CircleMarker, Popup, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -15,6 +15,8 @@ L.Icon.Default.mergeOptions({
 interface Props {
   state: SimulationState | null;
   selectedVehicleId: string | null;
+  historicalRouteWaypoints?: Coordinate[] | null;
+  historicalRouteId?: string | null;
 }
 
 // ── Coordinate helpers ───────────────────────────────────────────────────────
@@ -90,7 +92,7 @@ function MapController({ state }: { state: SimulationState | null }) {
 // ── Main MapView ─────────────────────────────────────────────────────────────
 // IMPORTANT: MapContainer must NEVER be conditionally rendered or unmounted.
 // We always mount it and pass null-safe props to child components.
-export default function MapView({ state, selectedVehicleId }: Props) {
+export default function MapView({ state, selectedVehicleId, historicalRouteWaypoints, historicalRouteId }: Props) {
   const primaryVehicle = state?.vehicles.find(v => v.id === (selectedVehicleId ?? 'veh_a')) ?? null;
 
   // Per-selected-vehicle alt routes
@@ -218,6 +220,27 @@ export default function MapView({ state, selectedVehicleId }: Props) {
             </Polyline>
           );
         })}
+
+        {/* ── Historical route layer (RMI) ───────────────────── */}
+        {historicalRouteWaypoints && historicalRouteWaypoints.length > 1 && (
+          <Polyline
+            positions={historicalRouteWaypoints.map(toLatLng)}
+            pathOptions={{
+              color: '#f59e0b',
+              weight: 4,
+              opacity: 0.75,
+              dashArray: '12 5',
+            }}
+          >
+            <Popup>
+              <div style={{ minWidth: 160 }}>
+                <div style={{ fontWeight: 700, fontSize: 13 }}>📚 Historical Route</div>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>{historicalRouteId ?? 'Memory route'}</div>
+                <div style={{ fontSize: 11, marginTop: 4 }}>[SIMULATED] Previously travelled route</div>
+              </div>
+            </Popup>
+          </Polyline>
+        )}
 
         {/* ── Vehicles ───────────────────────────────────────── */}
         {state?.vehicles.map(vehicle => {

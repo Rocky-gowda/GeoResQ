@@ -95,6 +95,66 @@ export interface WhatIfOption {
   time_saved: number;
 }
 
+// ── Route Memory Intelligence types ──────────────────────────────────────────
+
+export interface RouteMemoryCandidate {
+  route_id: string;
+  route_name: string;
+  source: 'memory' | 'optimizer' | 'current';
+  waypoints: Coordinate[];
+  historical_trip_count: number;
+  historical_avg_time: number | null;
+  current_estimated_time: number;
+  distance_km: number;
+  incident_count: number;
+  congestion_count: number;
+  has_closure: boolean;
+  score: number;
+  feasible: boolean;
+  rejection_reason: string | null;
+  selection_reason: string | null;
+}
+
+export interface RouteHistorySummary {
+  route_id: string;
+  trip_count: number;
+  avg_travel_time: number;
+  best_travel_time: number;
+  deviation_frequency: number;
+  last_used: string;
+}
+
+export interface JourneyRecord {
+  journey_id: string;
+  vehicle_id: string;
+  origin: Coordinate;
+  destination: Coordinate;
+  route_id: string;
+  route_coordinates: Coordinate[];
+  route_distance_km: number;
+  actual_travel_time_minutes: number;
+  planned_travel_time_minutes: number;
+  completed_at: string;
+  deviation_occurred: boolean;
+  incident_exposure: number;
+  outcome: string;
+  source: 'seeded' | 'recorded';
+}
+
+export interface RMIResult {
+  matching_history_found: boolean;
+  matched_journeys_count: number;
+  memory_source: 'no-match' | 'seeded' | 'recorded' | 'mixed';
+  candidate_routes: RouteMemoryCandidate[];
+  historical_statistics: RouteHistorySummary[];
+  current_condition_checks: Record<string, unknown>;
+  rejected_routes: Array<{ route_id: string; reason: string }>;
+  selected_route: RouteMemoryCandidate | null;
+  selection_reason: string;
+  estimated_time_saved_minutes: number;
+  log_events: string[];
+}
+
 export interface SimulationState {
   running: boolean;
   tick: number;
@@ -106,4 +166,5 @@ export interface SimulationState {
   explanation: string;
   what_if_comparison: Record<string, WhatIfOption>;
   dispatch_consideration: DispatchConsideration | null;
+  rmi_result: RMIResult | null;
 }

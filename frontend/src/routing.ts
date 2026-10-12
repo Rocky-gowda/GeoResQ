@@ -9,8 +9,8 @@ import { Coordinate } from './types';
 
 const OSRM_DIRECT = 'https://router.project-osrm.org/route/v1/driving';
 const BACKEND_PROXY = '/api/route';
-const TIMEOUT_MS = 7000;
-const MAX_RETRIES = 1;
+const TIMEOUT_MS = 3000;
+const MAX_RETRIES = 0;
 
 export interface OsrmResult {
   waypoints: Coordinate[];    // full decoded road geometry

@@ -5,11 +5,11 @@ All data is SIMULATED for hackathon demonstration purposes.
 import math
 import random
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 from app.models import (
     Coordinate, VehicleState, VehicleType, VehicleStatus, DeviationCause,
-    AlternativeRoute, DecisionEvent, SimulationState, Incident
+    AlternativeRoute, DecisionEvent, SimulationState, Incident, AgentDecision
 )
 from app.simulation_data import (
     VEHICLE_A_START, VEHICLE_A_DESTINATION, VEHICLE_A_PLANNED_ROUTE,
@@ -23,6 +23,7 @@ from app.agents import (
     ETAPredictionAgent, RouteOptimizationAgent, DecisionOrchestrator,
     ExplanationAgent, haversine_distance, route_distance_km, nearest_route_index,
 )
+from app.route_memory import RouteMemoryAgent, get_repository
 
 
 def interpolate(a: Coordinate, b: Coordinate, t: float) -> Coordinate:
@@ -42,6 +43,9 @@ class SimulationEngine:
         self._vehicles: Dict[str, VehicleState] = {}
         self._vehicle_route_idx: Dict[str, int] = {}
         self._vehicle_deviation_phase: Dict[str, bool] = {}
+        self._rmi_result: Optional[Dict] = None
+        # Initialise repository (loads seed data) at startup
+        self._rmi_repo = get_repository()
         self._reset()
 
     # ── helpers ──────────────────────────────────────────────
@@ -71,6 +75,7 @@ class SimulationEngine:
         self.agent_decisions = []
         self.decision_timeline = []
         self.explanation = "[SIMULATED] Awaiting simulation start."
+        self._rmi_result = None
 
         dist_a = route_distance_km(VEHICLE_A_PLANNED_ROUTE)
         dist_b = route_distance_km(VEHICLE_B_PLANNED_ROUTE)
@@ -312,6 +317,55 @@ class SimulationEngine:
         # Agent 7
         self.explanation = explain_agent.explain(veh_a, routes_a, orch_dec)
 
+        # Agent 8 — Route Memory Intelligence (run every 8 ticks or on first deviation)
+        first_deviation = (
+            veh_a.deviation_detected
+            and not any(
+                e.event_type == "rmi_analysis"
+                for e in self.decision_timeline
+            )
+        )
+        if t == 1 or t % 8 == 0 or first_deviation:
+            rmi_agent = RouteMemoryAgent(self._rmi_repo)
+            # Build optimizer candidate list for RMI
+            opt_candidates = [
+                {"id": rc["id"], "name": rc["name"], "waypoints": rc["waypoints"]}
+                for rc in self.alt_routes_data.get("veh_a", [])
+            ]
+            rmi = rmi_agent.analyse(
+                vehicle_id            = "veh_a",
+                origin                = veh_a.planned_route[0] if veh_a.planned_route else veh_a.current_position,
+                destination           = veh_a.destination,
+                incidents             = self.incidents,
+                optimizer_candidates  = opt_candidates,
+                predicted_eta_minutes = veh_a.predicted_eta_minutes,
+            )
+            self._rmi_result = rmi
+
+            # Emit log events to the decision log
+            for log_line in rmi.get("log_events", []):
+                new_decisions.append(AgentDecision(
+                    agent="[Route Memory Agent]",
+                    timestamp=datetime.utcnow().isoformat(),
+                    action="RMI_ANALYSIS",
+                    reasoning=log_line,
+                    confidence=0.91,
+                    data={"rmi_summary": {
+                        "matching_history_found": rmi["matching_history_found"],
+                        "matched_journeys_count": rmi["matched_journeys_count"],
+                        "memory_source": rmi["memory_source"],
+                        "selected_route": rmi["selected_route"]["route_id"] if rmi.get("selected_route") else None,
+                        "time_saved": rmi["estimated_time_saved_minutes"],
+                    }},
+                ))
+            new_events.append(self._make_event(
+                "rmi_analysis",
+                f"[SIMULATED] Route Memory Agent: {rmi['matched_journeys_count']} historical journeys matched. "
+                f"Memory source: {rmi['memory_source']}. "
+                + (f"Selected: {rmi['selected_route']['route_id']}." if rmi.get('selected_route') else "No feasible route."),
+                "veh_a", "info"
+            ))
+
         # ── Vehicle B ────────────────────────────────────────
         veh_b = self._vehicles["veh_b"]
         if veh_b.status != VehicleStatus.ARRIVED:
@@ -401,6 +455,7 @@ class SimulationEngine:
             explanation=self.explanation,
             what_if_comparison=what_if,
             dispatch_consideration=dispatch,
+            rmi_result=self._rmi_result,
         )
 
     # ── controls ─────────────────────────────────────────────

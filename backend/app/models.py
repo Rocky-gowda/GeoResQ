@@ -3,6 +3,9 @@ from typing import List, Optional, Dict, Any
 from enum import Enum
 
 
+# ── Route Memory Intelligence models ──────────────────────────────────────────
+
+
 class VehicleType(str, Enum):
     AMBULANCE = "ambulance"
     FIRE = "fire"
@@ -104,6 +107,67 @@ class DecisionEvent(BaseModel):
     severity: str  # info, warning, critical
 
 
+class RouteMemoryCandidate(BaseModel):
+    route_id: str
+    route_name: str
+    source: str              # memory | optimizer | current
+    waypoints: List[Coordinate]
+    historical_trip_count: int
+    historical_avg_time: Optional[float] = None
+    current_estimated_time: float
+    distance_km: float
+    incident_count: int
+    congestion_count: int
+    has_closure: bool
+    score: float
+    feasible: bool
+    rejection_reason: Optional[str] = None
+    selection_reason: Optional[str] = None
+
+
+class RouteHistorySummary(BaseModel):
+    route_id: str
+    trip_count: int
+    avg_travel_time: float
+    best_travel_time: float
+    deviation_frequency: float
+    last_used: str
+
+
+class RMIResult(BaseModel):
+    matching_history_found: bool
+    matched_journeys_count: int
+    memory_source: str           # no-match | seeded | recorded | mixed
+    candidate_routes: List[RouteMemoryCandidate]
+    historical_statistics: List[RouteHistorySummary]
+    current_condition_checks: Dict[str, Any]
+    rejected_routes: List[Dict[str, str]]
+    selected_route: Optional[RouteMemoryCandidate] = None
+    selection_reason: str
+    estimated_time_saved_minutes: float
+    log_events: List[str]
+
+
+class JourneyRecordRequest(BaseModel):
+    vehicle_id: str
+    origin: Coordinate
+    destination: Coordinate
+    route_id: str
+    route_coordinates: List[Coordinate]
+    route_distance_km: float
+    actual_travel_time_minutes: float
+    planned_travel_time_minutes: float
+    deviation_occurred: bool = False
+    incident_exposure: int = 0
+    outcome: str = "completed"
+
+
+class JourneyRecordResponse(BaseModel):
+    journey_id: str
+    message: str
+    total_journeys: int
+
+
 class SimulationState(BaseModel):
     running: bool
     tick: int
@@ -115,3 +179,4 @@ class SimulationState(BaseModel):
     explanation: str
     what_if_comparison: Dict[str, Any]
     dispatch_consideration: Optional[Dict[str, Any]] = None
+    rmi_result: Optional[Dict[str, Any]] = None   # Route Memory Intelligence output
